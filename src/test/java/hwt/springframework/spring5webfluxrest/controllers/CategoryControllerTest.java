@@ -2,15 +2,17 @@ package hwt.springframework.spring5webfluxrest.controllers;
 
 import hwt.springframework.spring5webfluxrest.domain.Category;
 import hwt.springframework.spring5webfluxrest.repositories.CategoryRepository;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
+import org.reactivestreams.Publisher;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
 class CategoryControllerTest {
     WebTestClient webTestClient;
@@ -43,8 +45,36 @@ class CategoryControllerTest {
                 .willReturn(Mono.just(Category.builder().description("Cat").build()));
 
         webTestClient.get()
-                .uri("/api/v1/someid")
+                .uri("/api/v1/categories/someid")
                 .exchange()
                 .expectBody(Category.class);
+    }
+
+    @Test
+    void create() {
+        BDDMockito.given(categoryRepository.saveAll(any(Publisher.class)))
+                .willReturn(Flux.just(Category.builder().description("desc").build()));
+
+        Mono<Category> catToSave = Mono.just(Category.builder().description("desc1").build());
+
+        webTestClient.post()
+                .uri("/api/v1/categories")
+                .body(catToSave, Category.class)
+                .exchange()
+                .expectStatus().isCreated();
+    }
+
+    @Test
+    void update() {
+        BDDMockito.given(categoryRepository.save(any(Category.class)))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        Mono<Category> catToUpdate = Mono.just(Category.builder().description("desc1").build());
+
+        webTestClient.put()
+                .uri("/api/v1/categories/asss")
+                .body(catToUpdate, Category.class)
+                .exchange()
+                .expectStatus().isOk();
     }
 }
